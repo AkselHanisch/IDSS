@@ -507,11 +507,11 @@ numerical_fields = [
 # Streamlit App
 st.title("Student Prediction System")
 
-option = st.radio("Choose an Option:", ["Candidate Prediction", "Current Student Prediction"])
+option = st.radio("Choose an Option:", ["Prediction for Candidate", "Prediction about Candidate for University","Prediction about Current Student for University"])
 
 user_input = {}
-if option == "Candidate Prediction":
-    st.subheader("Candidate Prediction")
+if option == "Prediction for Candidate":
+    st.subheader("Prediction for Candidate")
     for field, choices in dropdown_fields.items():
         if field == "Nationality":  # Special case for Nationality
             # Display keys (numbers) in the dropdown
@@ -532,11 +532,39 @@ if option == "Candidate Prediction":
         input_data = input_data.reindex(columns=candidate_features, fill_value=0)
 
         prediction = candidate_model.predict(input_data)
+        prediction_proba = candidate_model.predict_proba(input_data)
         result_map = {0: "Dropout", 1: "Success", 2: "Enrolled"}
-        st.markdown(f"<h2>Prediction: {result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        
+        st.markdown(f"<h3>Prediction:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; color: blue;'>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h3>Prediction Probabilities:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Dropout: {prediction_proba[0][0]:.2f}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Enrolled: {prediction_proba[0][2]:.2f}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Success: {prediction_proba[0][1]:.2f}</h4>", unsafe_allow_html=True)
+        
+        # Recommend courses if prediction is Dropout
+        if prediction[0] == 0:
+            st.markdown("<h4>The following courses may lead to better outcomes:</h4>", unsafe_allow_html=True)
+            recommendations = []
+            original_course = user_input["Course"]
+            
+            for course_code in dropdown_fields["Course"].keys():
+                # Replace course in input data
+                temp_input = input_data.copy()
+                temp_input["Course"] = course_code
+                temp_prediction = candidate_model.predict(temp_input)
+                if temp_prediction[0] in [1, 2]:  # Check for Success or Enrolled
+                    recommendations.append(dropdown_fields["Course"][course_code])
+            
+            if recommendations:
+               
+                for rec_course in recommendations:
+                    st.markdown(f"<li style='text-align: center;'>{rec_course}</li>", unsafe_allow_html=True)
+            else:
+                st.markdown("<h4 style='text-align: center;'>No alternative courses found that predict Success or Enrolled.</h4>", unsafe_allow_html=True)
 
-elif option == "Current Student Prediction":
-    st.subheader("Current Student Prediction")
+elif option == "Prediction about Current Student for University":
+    st.subheader("Prediction about Current Student for University")
     for field, choices in dropdown_fields.items():
         if field == "Nationality":  # Special case for Nationality
             # Display keys (numbers) in the dropdown
@@ -556,5 +584,101 @@ elif option == "Current Student Prediction":
         input_data = input_data.reindex(columns=student_features, fill_value=0)
 
         prediction = student_model.predict(input_data)
+        prediction_proba = student_model.predict_proba(input_data)
         result_map = {0: "Dropout", 1: "Success", 2: "Enrolled"}
-        st.markdown(f"<h2>Prediction: {result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        
+        st.markdown(f"<h3>Prediction:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; color: blue;'>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h3>Prediction Probabilities:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Dropout: {prediction_proba[0][0]:.2f}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Enrolled: {prediction_proba[0][2]:.2f}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Success: {prediction_proba[0][1]:.2f}</h4>", unsafe_allow_html=True)
+        
+        # Calculate the maximum probability of success or enrolled
+        max_success_enrolled = max(prediction_proba[0][1], prediction_proba[0][2])
+        dropout_probability = prediction_proba[0][0]
+
+        # Warning status
+        st.markdown(f"<h3>Warning Status:</h3>", unsafe_allow_html=True)
+        if max_success_enrolled - dropout_probability < 0.15:
+            st.markdown(f"<h4 style='text-align: center; color: red;'>Warning Required. High chances of Dropout.</h4>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<h4 style='text-align: center; color: green;'>No Warning Required</h4>", unsafe_allow_html=True)
+
+        st.markdown(f"<h3>Scholarship Status: </h3>", unsafe_allow_html=True)
+        # Scholarship feature
+        if prediction_proba[0][1] > 0.5:  # Check if success probability is greater than 0.5
+            st.markdown(f"<h4 style='text-align: center; color: green;'>Should Get Scholarship</h4>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<h4 style='text-align: center; color: red;'>No Scholarship</h4>", unsafe_allow_html=True)
+
+elif option == "Prediction about Candidate for University":
+    st.subheader("Prediction about Candidate for University")
+    for field, choices in dropdown_fields.items():
+        if field == "Nationality":  # Special case for Nationality
+            # Display keys (numbers) in the dropdown
+            selected_key = st.selectbox(f"Select {field}:", options=list(choices.keys()))
+            # Store the descriptive value corresponding to the key for the model
+            user_input[field] = choices[selected_key]
+        else:
+            # For other fields, show keys and map to descriptive values
+            user_input[field] = st.selectbox(f"Select {field}:", options=list(choices.keys()), format_func=lambda x: choices[x])
+
+    for field in numerical_fields:
+        if field in candidate_features:  # Exclude irrelevant fields
+            user_input[field] = st.number_input(f"Enter value for {field}:", min_value=0.0, value=0.0)
+
+    if st.button("Predict for Candidate"):
+        # Align input with training feature order
+        input_data = pd.DataFrame([user_input])
+        input_data = input_data.reindex(columns=candidate_features, fill_value=0)
+
+        prediction = candidate_model.predict(input_data)
+        prediction_proba = candidate_model.predict_proba(input_data)
+        result_map = {0: "Dropout", 1: "Success", 2: "Enrolled"}
+        
+        st.markdown(f"<h3>Prediction:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; color: blue;'>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h3>Prediction Probabilities:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Dropout: {prediction_proba[0][0]:.2f}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Enrolled: {prediction_proba[0][2]:.2f}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>Success: {prediction_proba[0][1]:.2f}</h4>", unsafe_allow_html=True)
+        
+        # Recommend courses if prediction is Dropout
+        if prediction[0] == 0:
+            st.markdown("<h4>The following courses may lead to better outcomes:</h4>", unsafe_allow_html=True)
+            recommendations = []
+            original_course = user_input["Course"]
+            
+            for course_code in dropdown_fields["Course"].keys():
+                # Replace course in input data
+                temp_input = input_data.copy()
+                temp_input["Course"] = course_code
+                temp_prediction = candidate_model.predict(temp_input)
+                if temp_prediction[0] in [1, 2]:  # Check for Success or Enrolled
+                    recommendations.append(dropdown_fields["Course"][course_code])
+            
+            if recommendations:
+               
+                for rec_course in recommendations:
+                    st.markdown(f"<li style='text-align: center;'>{rec_course}</li>", unsafe_allow_html=True)
+            else:
+                st.markdown("<h4 style='text-align: center;'>No alternative courses found that predict Success or Enrolled.</h4>", unsafe_allow_html=True)
+
+        # Calculate the maximum probability of success or enrolled
+        max_success_enrolled = max(prediction_proba[0][1], prediction_proba[0][2])
+        dropout_probability = prediction_proba[0][0]
+
+        # Warning status
+        st.markdown(f"<h3>Warning Status:</h3>", unsafe_allow_html=True)
+        if max_success_enrolled - dropout_probability < 0.15:
+            st.markdown(f"<h4 style='text-align: center; color: red;'>Warning Required. High chances of Dropout.</h4>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<h4 style='text-align: center; color: green;'>No Warning Required</h4>", unsafe_allow_html=True)
+
+        st.markdown(f"<h3>Scholarship Status: </h3>", unsafe_allow_html=True)
+        # Scholarship feature
+        if prediction_proba[0][1] > 0.5:  # Check if success probability is greater than 0.5
+            st.markdown(f"<h4 style='text-align: center; color: green;'>Should Get Scholarship</h4>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<h4 style='text-align: center; color: red;'>No Scholarship</h4>", unsafe_allow_html=True)
