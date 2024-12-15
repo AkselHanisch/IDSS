@@ -536,7 +536,7 @@ if option == "Prediction for Candidate":
         result_map = {0: "Dropout", 1: "Success", 2: "Enrolled"}
         
         st.markdown(f"<h3>Prediction:</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h2 style='text-align: center; color: blue;'>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center;'>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
         st.markdown(f"<h3>Prediction Probabilities:</h3>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='text-align: center;'>Dropout: {prediction_proba[0][0]:.2f}</h4>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='text-align: center;'>Enrolled: {prediction_proba[0][2]:.2f}</h4>", unsafe_allow_html=True)
@@ -588,7 +588,7 @@ elif option == "Prediction about Current Student for University":
         result_map = {0: "Dropout", 1: "Success", 2: "Enrolled"}
         
         st.markdown(f"<h3>Prediction:</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h2 style='text-align: center; color: blue;'>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; '>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
         st.markdown(f"<h3>Prediction Probabilities:</h3>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='text-align: center;'>Dropout: {prediction_proba[0][0]:.2f}</h4>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='text-align: center;'>Enrolled: {prediction_proba[0][2]:.2f}</h4>", unsafe_allow_html=True)
@@ -638,7 +638,7 @@ elif option == "Prediction about Candidate for University":
         result_map = {0: "Dropout", 1: "Success", 2: "Enrolled"}
         
         st.markdown(f"<h3>Prediction:</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h2 style='text-align: center; color: blue;'>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; '>{result_map[prediction[0]]}</h2>", unsafe_allow_html=True)
         st.markdown(f"<h3>Prediction Probabilities:</h3>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='text-align: center;'>Dropout: {prediction_proba[0][0]:.2f}</h4>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='text-align: center;'>Enrolled: {prediction_proba[0][2]:.2f}</h4>", unsafe_allow_html=True)
